@@ -470,81 +470,75 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
   return (
     <div className="p-4 max-w-4xl mx-auto">
       {testMode && (
-        <div className="mb-4 p-2 bg-red-100 text-red-800 rounded text-center font-bold">
+        <div className="mb-4 p-2 bg-polar-red/20 text-polar-gold rounded text-center font-holiday">
           🔧 TEST MODE ACTIVE 🔧
         </div>
       )}
       
       {notification && (
         <div 
-          className={`mb-4 p-3 rounded-lg text-center font-medium animate-fade-in
+          className={`mb-4 p-3 rounded-lg text-center font-holiday animate-fade-in
             ${notification.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-300' 
-              : 'bg-red-100 text-red-800 border border-red-300'
+              ? 'bg-polar-green/20 text-polar-gold border border-polar-gold' 
+              : 'bg-polar-red/20 text-polar-gold border border-polar-red'
             }`}
         >
           {notification.message}
         </div>
       )}
       
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Game Room</h1>
-        <div className="flex items-center gap-4">
-          <div className="text-sm space-x-4">
-            {/* Add player count indicator */}
-            <span className={`${players.length >= MAX_PLAYERS ? 'text-red-500 font-bold' : ''}`}>
-              Players: {players.length}/{MAX_PLAYERS}
-            </span>
-            <span>
-              Game ID: <span className="font-mono">{gameId}</span>
-            </span>
+      <div className="holiday-card p-6 mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-4xl font-holiday text-polar-gold">
+            The Polar Express Mystery
+          </h1>
+          <div className="flex items-center gap-4">
+            <div className="font-ticket text-polar-steam">
+              <span>Ticket #{gameId.slice(0, 8)}</span>
+              <div className="text-sm">
+                Passengers: {players.length}/{MAX_PLAYERS}
+              </div>
+            </div>
+            <button
+              onClick={onLeaveGame}
+              className="ticket-button px-3 py-1 text-sm"
+            >
+              Disembark
+            </button>
           </div>
-          <button
-            onClick={onLeaveGame}
-            className="px-2 py-1 text-sm bg-red-500 text-white rounded"
-          >
-            Leave Game
-          </button>
         </div>
-      </div>
 
-      {players.length >= MAX_PLAYERS && (
-        <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
-          Game room is at maximum capacity
-        </div>
-      )}
-
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-2">Players</h2>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-4">
           {players.map(player => (
             <div 
               key={player.id}
-              className={`p-2 border rounded flex justify-between items-center
-                ${game.status === 'SELECTING' && player.acknowledged ? 'bg-green-50' : ''}
-              `}
+              className={`p-3 holiday-card flex justify-between items-center
+                ${game.status === 'SELECTING' && player.acknowledged 
+                  ? 'border-polar-green' 
+                  : ''
+                }`}
             >
-              <span>
+              <span className="font-ticket text-polar-gold">
                 {player.name} 
-                {player.is_host ? ' (Host)' : ''}
+                {player.is_host ? ' 🎅' : ''}
               </span>
-              {player.acknowledged && <span>✓</span>}
+              {player.acknowledged && <span className="text-polar-gold">✓</span>}
             </div>
           ))}
         </div>
+
+        {renderGameContent()}
+
+        {testMode && game && (
+          <TestControls 
+            game={game}
+            players={players}
+            gameId={gameId}
+            setPlayers={setPlayers}
+            currentPlayerName={playerName}
+          />
+        )}
       </div>
-
-      {renderGameContent()}
-
-      {testMode && game && (
-        <TestControls 
-          game={game}
-          players={players}
-          gameId={gameId}
-          setPlayers={setPlayers}
-          currentPlayerName={playerName}
-        />
-      )}
     </div>
   )
 }

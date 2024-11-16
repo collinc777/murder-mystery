@@ -131,46 +131,64 @@ function App() {
 
   if (!gameId) {
     return (
-      <div className="p-4 max-w-md mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Murder Mystery Game</h1>
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-2">Your Name</label>
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your name"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <button
-              onClick={handleCreateGame}
-              disabled={!playerName}
-              className="w-full p-2 bg-blue-500 text-white rounded disabled:opacity-50"
-            >
-              Create New Game
-            </button>
+      <div className="min-h-screen p-4 bg-snow-pattern">
+        <div className="max-w-md mx-auto">
+          <div className="holiday-card p-6">
+            <h1 className="text-4xl font-holiday text-polar-gold text-center mb-8">
+              The Polar Express
+              <div className="text-2xl steam-text">Murder Mystery</div>
+            </h1>
             
-            <div className="text-center">or</div>
-            
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter game code"
-                className="flex-1 p-2 border rounded"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value)}
-              />
-              <button
-                onClick={() => handleJoinGame(joinCode)}
-                disabled={!playerName || !joinCode}
-                className="p-2 bg-green-500 text-white rounded disabled:opacity-50"
-              >
-                Join Game
-              </button>
+            <div className="space-y-6">
+              <div>
+                <label className="block mb-2 font-ticket text-polar-gold">Your Ticket Name</label>
+                <input
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full p-2 bg-polar-night border-2 border-polar-gold rounded 
+                           font-ticket text-polar-gold placeholder-polar-steam/50
+                           focus:outline-none focus:ring-2 focus:ring-polar-gold"
+                  placeholder="Enter your name"
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <button
+                  onClick={handleCreateGame}
+                  disabled={!playerName}
+                  className="ticket-button w-full p-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Board New Train
+                </button>
+                
+                <div className="text-center font-ticket text-polar-steam">or</div>
+                
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter ticket number"
+                    className="flex-1 p-2 bg-polar-night border-2 border-polar-gold rounded 
+                             font-ticket text-polar-gold placeholder-polar-steam/50
+                             focus:outline-none focus:ring-2 focus:ring-polar-gold"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                  />
+                  <button
+                    onClick={() => handleJoinGame(joinCode)}
+                    disabled={!playerName || !joinCode}
+                    className="ticket-button px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Board
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <p className="font-ticket text-sm text-polar-steam">
+                All aboard for a mysterious journey...
+              </p>
             </div>
           </div>
         </div>

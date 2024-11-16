@@ -150,19 +150,19 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
           <div className="flex gap-2">
             <button
               onClick={() => handleForceGameState('LOBBY')}
-              className="px-3 py-1 bg-gray-500 text-white rounded text-sm"
+              className="ticket-button px-3 py-1 text-sm"
             >
               Force LOBBY
             </button>
             <button
               onClick={() => handleForceGameState('SELECTING')}
-              className="px-3 py-1 bg-gray-500 text-white rounded text-sm"
+              className="ticket-button px-3 py-1 text-sm"
             >
               Force SELECTING
             </button>
             <button
               onClick={() => handleForceGameState('ACTIVE')}
-              className="px-3 py-1 bg-gray-500 text-white rounded text-sm"
+              className="ticket-button px-3 py-1 text-sm"
             >
               Force ACTIVE
             </button>
@@ -173,7 +173,7 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
           <h3 className="font-semibold mb-2">Player Controls</h3>
           <button
             onClick={handleResetAllAcknowledgments}
-            className="px-3 py-1 bg-gray-500 text-white rounded text-sm"
+            className="ticket-button px-3 py-1 text-sm"
           >
             Reset All Acknowledgments
           </button>
@@ -185,14 +185,14 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
             <div className="flex gap-2">
               <button
                 onClick={handleSimulateOneAcknowledgment}
-                className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                className="ticket-button px-3 py-1 text-sm"
                 disabled={players.every(p => p.acknowledged)}
               >
                 Simulate One Acknowledgment
               </button>
               <button
                 onClick={handleSimulateAcknowledgments}
-                className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                className="ticket-button px-3 py-1 text-sm"
                 disabled={players.every(p => p.acknowledged)}
               >
                 Simulate All Acknowledgments
@@ -257,7 +257,7 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
           <div className="flex gap-2">
             <button
               onClick={handleMakeMePoisoner}
-              className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+              className="ticket-button px-3 py-1 text-sm"
             >
               Make Me Poisoner
             </button>

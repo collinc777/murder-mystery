@@ -12,4 +12,22 @@
 body {
   margin: 0;
   min-height: 100vh;
+  @apply bg-polar-night text-polar-snow bg-snow-pattern;
+}
+
+@layer components {
+  .ticket-button {
+    @apply bg-polar-gold text-polar-night font-ticket font-bold 
+           border-2 border-polar-gold hover:bg-polar-night hover:text-polar-gold
+           transition-colors duration-300 uppercase tracking-wider;
+  }
+
+  .holiday-card {
+    @apply bg-polar-night/80 border-2 border-polar-gold 
+           rounded-lg shadow-lg backdrop-blur-sm;
+  }
+
+  .steam-text {
+    @apply text-polar-steam animate-steam;
+  }
 }
