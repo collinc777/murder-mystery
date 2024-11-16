@@ -171,13 +171,11 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
     try {
       console.log('Starting selection phase...')
       
-      // First update game status
-      const { data: game, error: gameError } = await supabase
+      // Remove unused game variable
+      const { error: gameError } = await supabase
         .from('games')
         .update({ status: 'SELECTING' })
         .eq('id', gameId)
-        .select()
-        .single()
 
       if (gameError) {
         console.error('Error updating game status:', gameError)

@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "update-types": "supabase gen types typescript --linked > src/lib/database.types.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.1",

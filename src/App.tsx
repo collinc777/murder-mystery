@@ -1,37 +1,26 @@
 // src/App.tsx
-import { useEffect, useState } from 'react'
-import { Database } from './lib/database.types'
+import { useState } from 'react'
 import { supabase } from './lib/supabase'
 import { GameRoom } from './components/GameRoom'
 import { storage } from './lib/storage'
-
-type Game = Database['public']['Tables']['games']['Row']
-type Player = Database['public']['Tables']['players']['Row']
 
 const MAX_PLAYERS = 20
 
 function App() {
   const [gameId, setGameId] = useState<string | null>(() => {
-    // Initialize from storage if available
     const session = storage.getGameSession();
     return session?.gameId || null;
   });
   
   const [playerName, setPlayerName] = useState(() => {
-    // Initialize from storage if available
     const session = storage.getGameSession();
     return session?.playerName || '';
   });
   
   const [joinCode, setJoinCode] = useState('')
   
-  // Add test mode state
-  const [testMode, setTestMode] = useState(() => {
-    // You might want to control this via environment variable or URL parameter
-    return window.location.search.includes('test=true')
-  })
+  const testMode = window.location.search.includes('test=true')
   
-  // Join existing game
   const handleJoinGame = async (gameCode: string) => {
     const { data: game, error } = await supabase
       .from('games')
@@ -44,7 +33,6 @@ function App() {
       return
     }
 
-    // Check player count
     const { data: existingPlayers } = await supabase
       .from('players')
       .select('id')
@@ -55,8 +43,7 @@ function App() {
       return
     }
 
-    // Add player to game
-    const { data: player, error: playerError } = await supabase
+    const { error: playerError } = await supabase
       .from('players')
       .insert({
         game_id: game.id,
@@ -75,9 +62,7 @@ function App() {
     setGameId(game.id)
   }
 
-  // Create new game
   const handleCreateGame = async () => {
-    // Create game
     const { data: game, error } = await supabase
       .from('games')
       .insert({
@@ -92,8 +77,7 @@ function App() {
       return
     }
 
-    // Add host player
-    const { data: player, error: playerError } = await supabase
+    const { error: playerError } = await supabase
       .from('players')
       .insert({
         game_id: game.id,
@@ -112,11 +96,9 @@ function App() {
     setGameId(game.id)
   }
 
-  // Add a leave game function
   const handleLeaveGame = async () => {
     if (!gameId) return;
     
-    // Remove player from game
     await supabase
       .from('players')
       .delete()
@@ -177,7 +159,6 @@ function App() {
     )
   }
 
-  // Replace the placeholder game room render with the actual GameRoom component
   return <GameRoom 
     gameId={gameId} 
     playerName={playerName} 
