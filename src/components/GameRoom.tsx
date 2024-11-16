@@ -11,7 +11,6 @@ type Player = Database['public']['Tables']['players']['Row']
 interface GameRoomProps {
   gameId: string
   playerName: string
-  onLeaveGame: () => void
   testMode?: boolean
 }
 
@@ -75,7 +74,7 @@ const triggerCelebration = () => {
   })
 }
 
-export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: GameRoomProps) {
+export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps) {
   const [game, setGame] = useState<Game | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
@@ -369,18 +368,18 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
                   <button
                     onClick={handleAddTestPlayers}
                     disabled={players.length >= MAX_PLAYERS}
-                    className="w-full p-2 bg-gray-500 text-white rounded disabled:opacity-50"
+                    className="ticket-button w-full p-2 disabled:opacity-50"
                   >
-                    Add Test Players
+                    Add Test Passengers
                   </button>
                 )}
                 <button
                   onClick={handleStartSelection}
                   disabled={players.length < 4}
-                  className="w-full p-2 bg-blue-500 text-white rounded disabled:opacity-50"
+                  className="ticket-button w-full p-2 disabled:opacity-50"
                 >
-                  Start Selection Phase
-                  {players.length < 4 && " (Need at least 4 players)"}
+                  Begin Journey
+                  {players.length < 4 && " (Need at least 4 passengers)"}
                 </button>
               </>
             )}
@@ -391,38 +390,38 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
         return (
           <div className="space-y-4">
             {currentPlayer && !currentPlayer.acknowledged && (
-              <div className="p-4 border rounded bg-yellow-50">
-                <p className="font-bold mb-2">
+              <div className="holiday-card p-4">
+                <p className="font-holiday text-polar-gold text-lg mb-2">
                   {currentPlayer.is_poisoner 
-                    ? "🎭 You are the poisoner! Try to remain undetected."
-                    : "You are not the poisoner. Try to identify who is!"
+                    ? "🎭 You are the mysterious poisoner! Stay undetected on this journey."
+                    : "You are an innocent passenger. Find the poisoner among us!"
                   }
                 </p>
                 <button
                   onClick={handleAcknowledge}
-                  className="w-full p-2 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700"
+                  className="ticket-button w-full p-2"
                 >
-                  I Understand My Role
+                  Punch My Ticket
                 </button>
               </div>
             )}
             
             {currentPlayer?.acknowledged && (
-              <div className="p-4 border rounded bg-green-50">
-                <p className="font-bold text-green-800">
+              <div className="holiday-card p-4">
+                <p className="font-holiday text-polar-gold text-lg">
                   {currentPlayer.is_poisoner 
-                    ? "Remember: You are the poisoner!"
-                    : "Remember: You are not the poisoner!"
+                    ? "Remember: You are the mysterious poisoner!"
+                    : "Remember: You are an innocent passenger!"
                   }
                 </p>
               </div>
             )}
             
-            <div className="text-center p-4 bg-gray-50 rounded">
-              <p className="text-lg font-semibold">
-                Waiting for players to acknowledge their roles...
+            <div className="holiday-card p-4 text-center">
+              <p className="font-holiday text-polar-gold text-lg">
+                Waiting for passengers to board...
               </p>
-              <p className="text-2xl mt-2">
+              <p className="font-ticket text-polar-steam text-2xl mt-2">
                 {players.filter(p => p.acknowledged).length} of {players.length} ready
               </p>
             </div>
@@ -438,15 +437,15 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
                   if (!error) {
                     triggerCelebration()
                     setNotification({
-                      message: '🎉 Game Started! Let the mystery begin!',
+                      message: '🎉 All Aboard! The journey begins!',
                       type: 'success'
                     })
                     setTimeout(() => setNotification(null), 3000)
                   }
                 }}
-                className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700"
+                className="ticket-button w-full p-3 text-lg"
               >
-                Start Game
+                Depart Station
               </button>
             )}
           </div>
@@ -454,9 +453,11 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
 
       case 'ACTIVE':
         return (
-          <div className="p-4 text-center">
-            <h2 className="text-xl font-bold">Game in Progress</h2>
-            {/* We'll implement the actual game UI later */}
+          <div className="holiday-card p-4 text-center">
+            <h2 className="font-holiday text-polar-gold text-2xl">Journey in Progress</h2>
+            <p className="font-ticket text-polar-steam mt-2">
+              The mystery unfolds as we travel through the night...
+            </p>
           </div>
         )
 
@@ -492,19 +493,11 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
           <h1 className="text-4xl font-holiday text-polar-gold">
             The Polar Express Mystery
           </h1>
-          <div className="flex items-center gap-4">
-            <div className="font-ticket text-polar-steam">
-              <span>Ticket #{gameId.slice(0, 8)}</span>
-              <div className="text-sm">
-                Passengers: {players.length}/{MAX_PLAYERS}
-              </div>
+          <div className="font-ticket text-polar-steam">
+            <span>Ticket #{gameId.slice(0, 8)}</span>
+            <div className="text-sm">
+              Passengers: {players.length}/{MAX_PLAYERS}
             </div>
-            <button
-              onClick={onLeaveGame}
-              className="ticket-button px-3 py-1 text-sm"
-            >
-              Disembark
-            </button>
           </div>
         </div>
 

@@ -21,6 +21,8 @@ function App() {
   
   const [isTestMode, setIsTestMode] = useState(false)
 
+  const previousSessions = storage.getAllGameSessions()
+
   useEffect(() => {
     const checkTestMode = async () => {
       if (!gameId || !playerName) return;
@@ -115,18 +117,108 @@ function App() {
     setGameId(game.id)
   }
 
-  const handleLeaveGame = async () => {
-    if (!gameId) return;
-    
-    await supabase
-      .from('players')
-      .delete()
-      .eq('game_id', gameId)
-      .eq('name', playerName);
-    
-    storage.clearGameSession();
-    setGameId(null);
-    setPlayerName('');
+  const handleRejoinGame = async (sessionGameId: string, sessionPlayerName: string) => {
+    try {
+      // First check if game exists and get its current state
+      const { data: games, error: gameError } = await supabase
+        .from('games')
+        .select('*')
+        .eq('id', sessionGameId)
+
+      const game = games?.[0]
+
+      if (gameError || !game) {
+        alert('Previous journey not found!')
+        storage.clearGameSession(sessionGameId)
+        return
+      }
+
+      // Check if game is in a joinable state
+      if (game.status === 'COMPLETED') {
+        alert('This journey has ended!')
+        return
+      }
+
+      // Check if player exists in game and get their previous state
+      const { data: players, error: playerError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('game_id', sessionGameId)
+        .eq('name', sessionPlayerName)
+
+      const existingPlayer = players?.[0]
+
+      if (!players || playerError || !existingPlayer) {
+        // Player not found, check if there's room
+        const { data: currentPlayers } = await supabase
+          .from('players')
+          .select('id')
+          .eq('game_id', sessionGameId)
+
+        if (currentPlayers && currentPlayers.length >= MAX_PLAYERS) {
+          alert('This journey is full!')
+          return
+        }
+
+        // Check if this was the host (first player) of the game
+        const { data: hostPlayers } = await supabase
+          .from('players')
+          .select('*')
+          .eq('game_id', sessionGameId)
+          .eq('is_host', true)
+
+        const hostExists = hostPlayers && hostPlayers.length > 0
+
+        // Create new player entry with default state
+        const { error: createError } = await supabase
+          .from('players')
+          .insert({
+            game_id: sessionGameId,
+            name: sessionPlayerName,
+            is_host: !hostExists, // If no host exists, this player becomes host
+            acknowledged: false,
+            is_poisoner: false
+          })
+
+        if (createError) {
+          alert('Error rejoining journey!')
+          return
+        }
+      } else {
+        // Player exists, preserve ALL their state
+        const preservedState = {
+          is_host: existingPlayer.is_host,
+          is_poisoner: existingPlayer.is_poisoner,
+          acknowledged: existingPlayer.acknowledged,
+          // Only reset acknowledgment if game went back to LOBBY
+          ...(game.status === 'LOBBY' ? { acknowledged: false } : {})
+        }
+
+        const { error: updateError } = await supabase
+          .from('players')
+          .update(preservedState)
+          .eq('id', existingPlayer.id)
+
+        if (updateError) {
+          alert('Error restoring previous state!')
+          return
+        }
+      }
+
+      // Update local state
+      setPlayerName(sessionPlayerName)
+      setGameId(sessionGameId)
+
+      // Update session storage with latest
+      storage.saveGameSession(sessionGameId, sessionPlayerName)
+
+      // Show success message
+      alert('Successfully reboarded your journey!')
+
+    } catch (error) {
+      console.error('Error in handleRejoinGame:', error)
+      alert('Error rejoining journey!')
+    }
   }
 
   if (!gameId) {
@@ -140,6 +232,40 @@ function App() {
             </h1>
             
             <div className="space-y-6">
+              {previousSessions.length > 0 && (
+                <div className="space-y-4 mb-8">
+                  <h2 className="font-holiday text-polar-gold text-xl">Previous Journeys</h2>
+                  {previousSessions.map(session => (
+                    <div 
+                      key={session.gameId}
+                      className="holiday-card p-3 flex justify-between items-center"
+                    >
+                      <div className="font-ticket text-polar-gold">
+                        <div>Ticket #{session.gameId.slice(0, 8)}</div>
+                        <div className="text-sm text-polar-steam">
+                          Passenger: {session.playerName}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRejoinGame(session.gameId, session.playerName)}
+                        className="ticket-button px-4 py-2 text-sm"
+                      >
+                        Reboard
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      storage.clearGameSession()
+                      window.location.reload()
+                    }}
+                    className="text-sm text-polar-steam hover:text-polar-gold transition-colors"
+                  >
+                    Clear Journey History
+                  </button>
+                </div>
+              )}
+
               <div>
                 <label className="block mb-2 font-ticket text-polar-gold">Your Ticket Name</label>
                 <input
@@ -199,7 +325,6 @@ function App() {
   return <GameRoom 
     gameId={gameId} 
     playerName={playerName} 
-    onLeaveGame={handleLeaveGame}
     testMode={isTestMode}
   />
 }
