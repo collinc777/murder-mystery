@@ -7,12 +7,12 @@ import { NewGame } from './components/NewGame'
 import { JoinGame } from './components/JoinGame'
 
 function App() {
-  const [gameId, setGameId] = useState<string | null>(() => {
+  const [gameId] = useState<string | null>(() => {
     const session = storage.getGameSession();
     return session?.gameId || null;
   });
   
-  const [playerName, setPlayerName] = useState(() => {
+  const [playerName] = useState(() => {
     const session = storage.getGameSession();
     return session?.playerName || '';
   });

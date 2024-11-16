@@ -99,6 +99,13 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
           return
         }
 
+        // If game is completed, clear session and return to station
+        if (gameData.status === 'COMPLETED') {
+          storage.clearGameSession(gameId)
+          window.location.reload()
+          return
+        }
+
         setGame(gameData)
 
         // Load current player data
@@ -498,6 +505,8 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
             <TrainCarView 
               players={players}
               currentPlayerName={playerName}
+              isHost={currentPlayer?.is_host}
+              gameStatus={game.status}
             />
             <div className="holiday-card p-4 text-center">
               <h2 className="font-holiday text-polar-gold text-2xl">Journey in Progress</h2>

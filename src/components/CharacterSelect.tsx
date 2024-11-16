@@ -4,10 +4,9 @@ import { CHARACTERS } from '../constants/characters'
 interface CharacterSelectProps {
   takenNames: string[]
   onSelect: (name: string) => void
-  gameId: string
 }
 
-export function CharacterSelect({ takenNames, onSelect, gameId }: CharacterSelectProps) {
+export function CharacterSelect({ takenNames, onSelect }: CharacterSelectProps) {
   const [selectedName, setSelectedName] = useState<string | null>(null)
   const [hoveredFamily, setHoveredFamily] = useState<string | null>(null)
 

@@ -12,7 +12,7 @@ export function WelcomeScreen() {
   const [activeGame, setActiveGame] = useState<Game | null>(null)
   const [takenNames, setTakenNames] = useState<string[]>([])
   const [isHost, setIsHost] = useState(false)
-  const [redirecting, setRedirecting] = useState(false)
+  const redirecting = false
 
   useEffect(() => {
     // Check if user is already a host or player in the active game
@@ -27,7 +27,7 @@ export function WelcomeScreen() {
           .single()
 
         if (player) {
-          setIsHost(player.is_host)
+          setIsHost(player.is_host ?? false)
           return true
         }
       }
@@ -215,7 +215,6 @@ export function WelcomeScreen() {
               <CharacterSelect 
                 takenNames={takenNames}
                 onSelect={handleCharacterSelect}
-                gameId={activeGame.id}
               />
             ) : (
               <div className="text-center">
