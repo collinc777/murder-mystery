@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { GameRoom } from './components/GameRoom'
 import { storage } from './lib/storage'
@@ -19,8 +19,27 @@ function App() {
   
   const [joinCode, setJoinCode] = useState('')
   
-  const testMode = window.location.search.includes('test=true')
-  
+  const [isTestMode, setIsTestMode] = useState(false)
+
+  useEffect(() => {
+    const checkTestMode = async () => {
+      if (!gameId || !playerName) return;
+      
+      if (window.location.search.includes('test=true')) {
+        const { data: player } = await supabase
+          .from('players')
+          .select('is_host')
+          .eq('game_id', gameId)
+          .eq('name', playerName)
+          .single()
+        
+        setIsTestMode(player?.is_host ?? false)
+      }
+    }
+
+    checkTestMode()
+  }, [gameId, playerName])
+
   const handleJoinGame = async (gameCode: string) => {
     const { data: game, error } = await supabase
       .from('games')
@@ -163,7 +182,7 @@ function App() {
     gameId={gameId} 
     playerName={playerName} 
     onLeaveGame={handleLeaveGame}
-    testMode={testMode}
+    testMode={isTestMode}
   />
 }
 

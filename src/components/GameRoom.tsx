@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Database } from '../lib/database.types'
 import { TestControls } from './TestControls'
+import confetti from 'canvas-confetti'
 
 type Game = Database['public']['Tables']['games']['Row']
 type Player = Database['public']['Tables']['players']['Row']
@@ -29,10 +30,60 @@ function generateRandomName(): string {
 // Add this constant at the top with other constants
 const MAX_PLAYERS = 20
 
+const triggerCelebration = () => {
+  // Fire multiple bursts of confetti
+  const count = 200
+  const defaults = {
+    origin: { y: 0.7 },
+    zIndex: 1500
+  }
+
+  function fire(particleRatio: number, opts: confetti.Options) {
+    confetti({
+      ...defaults,
+      ...opts,
+      particleCount: Math.floor(count * particleRatio),
+    })
+  }
+
+  // Fire confetti in sequence
+  fire(0.25, {
+    spread: 26,
+    startVelocity: 55,
+  })
+
+  fire(0.2, {
+    spread: 60,
+  })
+
+  fire(0.35, {
+    spread: 100,
+    decay: 0.91,
+    scalar: 0.8
+  })
+
+  fire(0.1, {
+    spread: 120,
+    startVelocity: 25,
+    decay: 0.92,
+    scalar: 1.2
+  })
+
+  fire(0.1, {
+    spread: 120,
+    startVelocity: 45,
+  })
+}
+
 export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: GameRoomProps) {
   const [game, setGame] = useState<Game | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
+
   useEffect(() => {
     // Add this at the start of your useEffect
     const channel = supabase.channel('test')
@@ -164,7 +215,11 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
     if (!currentPlayer?.is_host) return
     
     if (players.length < 4) {
-      alert('Need at least 4 players to start!')
+      setNotification({
+        message: 'Need at least 4 players to start!',
+        type: 'error'
+      })
+      setTimeout(() => setNotification(null), 3000)
       return
     }
     
@@ -178,8 +233,11 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
         .eq('id', gameId)
 
       if (gameError) {
-        console.error('Error updating game status:', gameError)
-        alert('Error updating game status!')
+        setNotification({
+          message: 'Error updating game status!',
+          type: 'error'
+        })
+        setTimeout(() => setNotification(null), 3000)
         return
       }
       
@@ -220,11 +278,19 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
       }
 
       console.log('Selection phase started successfully!')
-      alert('Selection phase started! A poisoner has been chosen.')
+      setNotification({
+        message: 'Selection phase started! Players will now see their roles.',
+        type: 'success'
+      })
+      setTimeout(() => setNotification(null), 3000)
 
     } catch (error) {
       console.error('Error in handleStartSelection:', error)
-      alert('Error starting selection phase!')
+      setNotification({
+        message: 'Error starting selection phase!',
+        type: 'error'
+      })
+      setTimeout(() => setNotification(null), 3000)
     }
   }
 
@@ -363,13 +429,22 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
 
             {currentPlayer?.is_host && players.every(p => p.acknowledged) && (
               <button
-                onClick={() => {
-                  supabase
+                onClick={async () => {
+                  const { error } = await supabase
                     .from('games')
                     .update({ status: 'ACTIVE' })
                     .eq('id', gameId)
+                  
+                  if (!error) {
+                    triggerCelebration()
+                    setNotification({
+                      message: '🎉 Game Started! Let the mystery begin!',
+                      type: 'success'
+                    })
+                    setTimeout(() => setNotification(null), 3000)
+                  }
                 }}
-                className="w-full p-2 bg-blue-500 text-white rounded"
+                className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700"
               >
                 Start Game
               </button>
@@ -397,6 +472,18 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
       {testMode && (
         <div className="mb-4 p-2 bg-red-100 text-red-800 rounded text-center font-bold">
           🔧 TEST MODE ACTIVE 🔧
+        </div>
+      )}
+      
+      {notification && (
+        <div 
+          className={`mb-4 p-3 rounded-lg text-center font-medium animate-fade-in
+            ${notification.type === 'success' 
+              ? 'bg-green-100 text-green-800 border border-green-300' 
+              : 'bg-red-100 text-red-800 border border-red-300'
+            }`}
+        >
+          {notification.message}
         </div>
       )}
       
@@ -455,6 +542,7 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
           players={players}
           gameId={gameId}
           setPlayers={setPlayers}
+          currentPlayerName={playerName}
         />
       )}
     </div>

@@ -6,9 +6,10 @@ interface TestControlsProps {
   players: Player[]
   gameId: string
   setPlayers: React.Dispatch<React.SetStateAction<Player[]>>
+  currentPlayerName: string
 }
 
-export function TestControls({ game, players, gameId, setPlayers }: TestControlsProps) {
+export function TestControls({ game, players, gameId, setPlayers, currentPlayerName }: TestControlsProps) {
   const handleForceGameState = async (status: Game['status']) => {
     await supabase
       .from('games')
@@ -113,6 +114,29 @@ export function TestControls({ game, players, gameId, setPlayers }: TestControls
       setPlayers(prev => prev.map(p => 
         p.id === playerId ? { ...p, acknowledged: false } : p
       ))
+    }
+  }
+
+  const handleMakeMePoisoner = async () => {
+    try {
+      // First reset all players to not be poisoner
+      await supabase
+        .from('players')
+        .update({ is_poisoner: false })
+        .eq('game_id', gameId)
+
+      // Then make current player the poisoner
+      const { error } = await supabase
+        .from('players')
+        .update({ is_poisoner: true })
+        .eq('game_id', gameId)
+        .eq('name', currentPlayerName)
+
+      if (error) {
+        console.error('Error making current player poisoner:', error)
+      }
+    } catch (error) {
+      console.error('Error in handleMakeMePoisoner:', error)
     }
   }
 
@@ -225,6 +249,18 @@ export function TestControls({ game, players, gameId, setPlayers }: TestControls
             <div>Player Count: {players.length}</div>
             <div>Acknowledged: {players.filter(p => p.acknowledged).length}</div>
             <div>Poisoners: {players.filter(p => p.is_poisoner).length}</div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-semibold mb-2">Role Controls</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={handleMakeMePoisoner}
+              className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+            >
+              Make Me Poisoner
+            </button>
           </div>
         </div>
       </div>
