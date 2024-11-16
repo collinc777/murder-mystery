@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase'
 import type { Game } from '../types/game'
 import { CharacterSelect } from './CharacterSelect'
 import { storage } from '../lib/storage'
-import { HostIndicator } from './HostIndicator'
 import trainImage from "../assets/train.jpeg"
 
 export function WelcomeScreen() {
@@ -158,7 +157,6 @@ export function WelcomeScreen() {
 
   return (
     <div>
-      {isHost && <HostIndicator />}
       <div className="min-h-screen p-4 bg-snow-pattern relative overflow-hidden">
         {/* Steam effect */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2">

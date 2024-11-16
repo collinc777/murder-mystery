@@ -5,6 +5,7 @@ import { storage } from './lib/storage'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { NewGame } from './components/NewGame'
 import { JoinGame } from './components/JoinGame'
+import { Layout } from './components/Layout'
 
 function App() {
   const [gameId] = useState<string | null>(() => {
@@ -22,21 +23,37 @@ function App() {
 
   // If we have an active game session, show the game room
   if (gameId && playerName) {
-    return <GameRoom 
-      gameId={gameId} 
-      playerName={playerName}
-      testMode={window.location.search.includes('test=true')}
-    />;
+    return (
+      <Layout isHost={playerName === 'RUSSELL TINSLEBOTTOM'}>
+        <GameRoom 
+          gameId={gameId} 
+          playerName={playerName}
+          testMode={window.location.search.includes('test=true')}
+        />
+      </Layout>
+    );
   }
 
   // Route to appropriate component based on path
   switch (path) {
     case '/new':
-      return <NewGame />;
+      return (
+        <Layout>
+          <NewGame />
+        </Layout>
+      );
     case '/join':
-      return <JoinGame />;
+      return (
+        <Layout>
+          <JoinGame />
+        </Layout>
+      );
     default:
-      return <WelcomeScreen />;
+      return (
+        <Layout>
+          <WelcomeScreen />
+        </Layout>
+      );
   }
 }
 

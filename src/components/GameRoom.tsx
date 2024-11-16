@@ -524,7 +524,6 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
 
   return (
     <div>
-      {currentPlayer.is_host && <HostIndicator />}
       <div className="p-4 max-w-4xl mx-auto">
         {testMode && (
           <div className="mb-4 p-2 bg-polar-red/20 text-polar-gold rounded text-center font-holiday">
