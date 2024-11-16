@@ -2,13 +2,28 @@
 import { useEffect, useState } from 'react'
 import { Database } from './lib/database.types'
 import { supabase } from './lib/supabase'
+import { GameRoom } from './components/GameRoom'
+import { storage } from './lib/storage'
 
 type Game = Database['public']['Tables']['games']['Row']
 type Player = Database['public']['Tables']['players']['Row']
 
+const MAX_PLAYERS = 20
+
 function App() {
-  const [gameId, setGameId] = useState<string | null>(null)
-  const [playerName, setPlayerName] = useState('')
+  const [gameId, setGameId] = useState<string | null>(() => {
+    // Initialize from storage if available
+    const session = storage.getGameSession();
+    return session?.gameId || null;
+  });
+  
+  const [playerName, setPlayerName] = useState(() => {
+    // Initialize from storage if available
+    const session = storage.getGameSession();
+    return session?.playerName || '';
+  });
+  
+  const [joinCode, setJoinCode] = useState('')
   
   // Join existing game
   const handleJoinGame = async (gameCode: string) => {
@@ -20,6 +35,17 @@ function App() {
     
     if (error || !game) {
       alert('Game not found!')
+      return
+    }
+
+    // Check player count
+    const { data: existingPlayers } = await supabase
+      .from('players')
+      .select('id')
+      .eq('game_id', gameCode)
+
+    if (existingPlayers && existingPlayers.length >= MAX_PLAYERS) {
+      alert('Game room is full!')
       return
     }
 
@@ -39,6 +65,7 @@ function App() {
       return
     }
 
+    storage.saveGameSession(game.id, playerName);
     setGameId(game.id)
   }
 
@@ -75,7 +102,24 @@ function App() {
       return
     }
 
+    storage.saveGameSession(game.id, playerName);
     setGameId(game.id)
+  }
+
+  // Add a leave game function
+  const handleLeaveGame = async () => {
+    if (!gameId) return;
+    
+    // Remove player from game
+    await supabase
+      .from('players')
+      .delete()
+      .eq('game_id', gameId)
+      .eq('name', playerName);
+    
+    storage.clearGameSession();
+    setGameId(null);
+    setPlayerName('');
   }
 
   if (!gameId) {
@@ -110,11 +154,12 @@ function App() {
                 type="text"
                 placeholder="Enter game code"
                 className="flex-1 p-2 border rounded"
-                onChange={(e) => setGameId(e.target.value)}
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value)}
               />
               <button
-                onClick={() => gameId && handleJoinGame(gameId)}
-                disabled={!playerName}
+                onClick={() => handleJoinGame(joinCode)}
+                disabled={!playerName || !joinCode}
                 className="p-2 bg-green-500 text-white rounded disabled:opacity-50"
               >
                 Join Game
@@ -126,13 +171,12 @@ function App() {
     )
   }
 
-  // Render game room when we have a gameId
-  return (
-    <div>
-      <h1>Game Room {gameId}</h1>
-      {/* We'll build this next */}
-    </div>
-  )
+  // Replace the placeholder game room render with the actual GameRoom component
+  return <GameRoom 
+    gameId={gameId} 
+    playerName={playerName} 
+    onLeaveGame={handleLeaveGame}
+  />
 }
 
 export default App
