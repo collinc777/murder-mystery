@@ -1,22 +1,14 @@
 // src/types/game.ts
-export type GameStatus = 'LOBBY' | 'SELECTING' | 'ACTIVE' | 'COMPLETED'
+import { Database } from '../lib/database.types'
 
-export interface Player {
-  id: string
-  name: string
-  game_id: string
-  is_host: boolean
-  is_poisoner: boolean | null
-  acknowledged: boolean
+// Extract types from Database type
+export type Game = Database['public']['Tables']['games']['Row']
+export type Player = Database['public']['Tables']['players']['Row']
+export type GameStatus = NonNullable<Game['status']>
+
+// Export some type helpers if needed
+export const isGameStatus = (status: string | null): status is GameStatus => {
+  return status !== null && ['LOBBY', 'SELECTING', 'ACTIVE', 'COMPLETED'].includes(status)
 }
-
-export interface Game {
-  id: string
-  status: GameStatus
-  player_count: number
-  created_at: string
-}
-
-// src/lib/supabase.ts
 
 

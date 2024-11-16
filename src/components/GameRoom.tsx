@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Database } from '../lib/database.types'
+import { TestControls } from './TestControls'
 
 type Game = Database['public']['Tables']['games']['Row']
 type Player = Database['public']['Tables']['players']['Row']
@@ -10,6 +11,7 @@ interface GameRoomProps {
   gameId: string
   playerName: string
   onLeaveGame: () => void
+  testMode?: boolean
 }
 
 // Add these arrays at the top level for name generation
@@ -27,7 +29,7 @@ function generateRandomName(): string {
 // Add this constant at the top with other constants
 const MAX_PLAYERS = 20
 
-export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
+export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: GameRoomProps) {
   const [game, setGame] = useState<Game | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null)
@@ -94,8 +96,12 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
           table: 'players',
           filter: `game_id=eq.${gameId}`
         },
-        (payload) => {
-          console.log('Received player change:', payload)
+        (payload: any) => {
+          console.log('Received player change:', {
+            eventType: payload.eventType,
+            old: payload.old,
+            new: payload.new
+          })
           
           switch (payload.eventType) {
             case 'INSERT': {
@@ -111,11 +117,28 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
             }
             case 'UPDATE': {
               const updatedPlayer = payload.new as Player
-              setPlayers(prev => 
-                prev.map(p => p.id === updatedPlayer.id ? updatedPlayer : p)
-              )
-              // Update currentPlayer if it's the current user
+              console.log('Processing player update:', {
+                id: updatedPlayer.id,
+                name: updatedPlayer.name,
+                acknowledged: updatedPlayer.acknowledged
+              })
+              
+              setPlayers(prev => {
+                const newPlayers = prev.map(p => 
+                  p.id === updatedPlayer.id ? updatedPlayer : p
+                )
+                console.log('Players after update:', 
+                  newPlayers.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    acknowledged: p.acknowledged
+                  }))
+                )
+                return newPlayers
+              })
+              
               if (updatedPlayer.name === playerName) {
+                console.log('Updating current player:', updatedPlayer)
                 setCurrentPlayer(updatedPlayer)
               }
               break
@@ -207,14 +230,27 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
     }
   }
 
-  // Player acknowledgment
+  // Update the handleAcknowledge function
   const handleAcknowledge = async () => {
     if (!currentPlayer) return
     
-    await supabase
-      .from('players')
-      .update({ acknowledged: true })
-      .eq('id', currentPlayer.id)
+    try {
+      console.log('Acknowledging role...')
+      
+      // Remove local state updates since realtime will handle it
+      const { error } = await supabase
+        .from('players')
+        .update({ acknowledged: true })
+        .eq('id', currentPlayer.id)
+
+      if (error) {
+        console.error('Error acknowledging role:', error)
+        alert('Failed to acknowledge role!')
+      }
+    } catch (error) {
+      console.error('Error in handleAcknowledge:', error)
+      alert('Error acknowledging role!')
+    }
   }
 
   // Update the handleAddTestPlayers function
@@ -227,7 +263,6 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
       return
     }
     
-    console.log('Starting to add test players...')
     try {
       const testPlayers = Array.from({ length: Math.min(19, availableSlots) }, () => ({
         game_id: gameId,
@@ -237,20 +272,14 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
         is_poisoner: false
       }))
       
-      console.log('Generated test players:', testPlayers)
-      
-      // Batch insert all players at once
-      const { data, error } = await supabase
+      // Remove local state update since realtime will handle it
+      const { error } = await supabase
         .from('players')
         .insert(testPlayers)
         .select()
       
       if (error) {
         console.error('Error adding players:', error)
-      } else {
-        console.log('Successfully added players:', data)
-        // Update local state
-        setPlayers(prev => [...prev, ...(data || [])])
       }
 
       // Update player count in game
@@ -295,20 +324,31 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
       case 'SELECTING':
         return (
           <div className="space-y-4">
-            {!currentPlayer?.acknowledged && (
+            {currentPlayer && !currentPlayer.acknowledged && (
               <div className="p-4 border rounded bg-yellow-50">
                 <p className="font-bold mb-2">
-                  {currentPlayer?.is_poisoner 
+                  {currentPlayer.is_poisoner 
                     ? "🎭 You are the poisoner! Try to remain undetected."
                     : "You are not the poisoner. Try to identify who is!"
                   }
                 </p>
                 <button
                   onClick={handleAcknowledge}
-                  className="w-full p-2 bg-green-500 text-white rounded"
+                  className="w-full p-2 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700"
                 >
                   I Understand My Role
                 </button>
+              </div>
+            )}
+            
+            {currentPlayer?.acknowledged && (
+              <div className="p-4 border rounded bg-green-50">
+                <p className="font-bold text-green-800">
+                  {currentPlayer.is_poisoner 
+                    ? "Remember: You are the poisoner!"
+                    : "Remember: You are not the poisoner!"
+                  }
+                </p>
               </div>
             )}
             
@@ -354,6 +394,12 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
+      {testMode && (
+        <div className="mb-4 p-2 bg-red-100 text-red-800 rounded text-center font-bold">
+          🔧 TEST MODE ACTIVE 🔧
+        </div>
+      )}
+      
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Game Room</h1>
         <div className="flex items-center gap-4">
@@ -402,6 +448,15 @@ export function GameRoom({ gameId, playerName, onLeaveGame }: GameRoomProps) {
       </div>
 
       {renderGameContent()}
+
+      {testMode && game && (
+        <TestControls 
+          game={game}
+          players={players}
+          gameId={gameId}
+          setPlayers={setPlayers}
+        />
+      )}
     </div>
   )
 }

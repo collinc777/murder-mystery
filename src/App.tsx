@@ -25,6 +25,12 @@ function App() {
   
   const [joinCode, setJoinCode] = useState('')
   
+  // Add test mode state
+  const [testMode, setTestMode] = useState(() => {
+    // You might want to control this via environment variable or URL parameter
+    return window.location.search.includes('test=true')
+  })
+  
   // Join existing game
   const handleJoinGame = async (gameCode: string) => {
     const { data: game, error } = await supabase
@@ -176,6 +182,7 @@ function App() {
     gameId={gameId} 
     playerName={playerName} 
     onLeaveGame={handleLeaveGame}
+    testMode={testMode}
   />
 }
 
