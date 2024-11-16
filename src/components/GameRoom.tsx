@@ -299,13 +299,15 @@ export function GameRoom({ gameId, playerName, onLeaveGame, testMode = false }: 
           <div className="space-y-4">
             {currentPlayer?.is_host && (
               <>
-                <button
-                  onClick={handleAddTestPlayers}
-                  disabled={players.length >= MAX_PLAYERS}
-                  className="w-full p-2 bg-gray-500 text-white rounded disabled:opacity-50"
-                >
-                  Add Test Players
-                </button>
+                {testMode && (
+                  <button
+                    onClick={handleAddTestPlayers}
+                    disabled={players.length >= MAX_PLAYERS}
+                    className="w-full p-2 bg-gray-500 text-white rounded disabled:opacity-50"
+                  >
+                    Add Test Players
+                  </button>
+                )}
                 <button
                   onClick={handleStartSelection}
                   disabled={players.length < 4}
