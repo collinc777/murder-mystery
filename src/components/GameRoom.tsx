@@ -5,6 +5,9 @@ import { Database } from '../lib/database.types'
 import { TestControls } from './TestControls'
 import confetti from 'canvas-confetti'
 import { HostIndicator } from './HostIndicator'
+import { TrainCarView } from './TrainCarView'
+import { CHARACTERS } from '../constants/characters'
+import { storage } from '../lib/storage'
 
 type Game = Database['public']['Tables']['games']['Row']
 type Player = Database['public']['Tables']['players']['Row']
@@ -15,20 +18,16 @@ interface GameRoomProps {
   testMode?: boolean
 }
 
-// Add these arrays at the top level for name generation
-const ADJECTIVES = ['Happy', 'Sleepy', 'Grumpy', 'Silly', 'Clever', 'Sneaky', 'Lucky', 'Clumsy', 'Brave', 'Shy']
-const NOUNS = ['Penguin', 'Dragon', 'Unicorn', 'Panda', 'Fox', 'Wolf', 'Bear', 'Tiger', 'Lion', 'Rabbit']
-
-// Replace the TEST_PLAYERS constant with this function
-function generateRandomName(): string {
-  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)]
-  const number = Math.floor(Math.random() * 100)
-  return `${adjective}${noun}${number}`
-}
-
 // Add this constant at the top with other constants
 const MAX_PLAYERS = 20
+
+function generateRandomName(): string {
+  // Use the CHARACTERS constant to get a random character name
+  const allCharacters = Object.values(CHARACTERS).flatMap(family => 
+    family.members.map(member => member.name)
+  )
+  return allCharacters[Math.floor(Math.random() * allCharacters.length)]
+}
 
 const triggerCelebration = () => {
   // Fire multiple bursts of confetti
@@ -85,41 +84,60 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
   } | null>(null);
 
   useEffect(() => {
-    // Add this at the start of your useEffect
-    const channel = supabase.channel('test')
-    channel
-      .subscribe(status => {
-        console.log('Realtime subscription status:', status)
-      })
+    // Load initial game and player data
+    const loadInitialData = async () => {
+      try {
+        // Load game data
+        const { data: gameData, error: gameError } = await supabase
+          .from('games')
+          .select('*')
+          .eq('id', gameId)
+          .single()
 
-    // Load initial game data
-    const loadGame = async () => {
-      const { data: gameData } = await supabase
-        .from('games')
-        .select('*')
-        .eq('id', gameId)
-        .single()
-      
-      const { data: playersData } = await supabase
-        .from('players')
-        .select('*')
-        .eq('game_id', gameId)
+        if (gameError || !gameData) {
+          console.error('Error loading game:', gameError)
+          return
+        }
 
-      const { data: currentPlayerData } = await supabase
-        .from('players')
-        .select('*')
-        .eq('game_id', gameId)
-        .eq('name', playerName)
-        .single()
+        setGame(gameData)
 
-      setGame(gameData)
-      setPlayers(playersData || [])
-      setCurrentPlayer(currentPlayerData)
+        // Load current player data
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('game_id', gameId)
+          .eq('name', playerName)
+          .single()
+
+        if (playerError || !playerData) {
+          console.error('Error loading player:', playerError)
+          storage.clearGameSession(gameId)
+          window.location.reload()
+          return
+        }
+
+        setCurrentPlayer(playerData)
+
+        // Load all players
+        const { data: playersData, error: playersError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('game_id', gameId)
+
+        if (playersError) {
+          console.error('Error loading players:', playersError)
+          return
+        }
+
+        setPlayers(playersData || [])
+      } catch (error) {
+        console.error('Error in loadInitialData:', error)
+      }
     }
 
-    loadGame()
+    loadInitialData()
 
-    // Subscribe to game changes
+    // Set up subscriptions
     const gameSubscription = supabase
       .channel(`game-${gameId}`)
       .on(
@@ -130,13 +148,12 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
           table: 'games',
           filter: `id=eq.${gameId}`
         },
-        (payload) => {
+        (payload: any) => {
           setGame(payload.new as Game)
         }
       )
       .subscribe()
 
-    // Subscribe to player changes with improved handling
     const playerSubscription = supabase
       .channel(`players-${gameId}`)
       .on(
@@ -147,55 +164,40 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
           table: 'players',
           filter: `game_id=eq.${gameId}`
         },
-        (payload: any) => {
-          console.log('Received player change:', {
-            eventType: payload.eventType,
-            old: payload.old,
-            new: payload.new
-          })
-          
+        async (payload: any) => {
           switch (payload.eventType) {
             case 'INSERT': {
-              const newPlayer = payload.new as Player
-              setPlayers(prev => {
-                // Check if player already exists
-                if (prev.some(p => p.id === newPlayer.id)) {
-                  return prev
-                }
-                return [...prev, newPlayer]
-              })
-              break
-            }
-            case 'UPDATE': {
-              const updatedPlayer = payload.new as Player
-              console.log('Processing player update:', {
-                id: updatedPlayer.id,
-                name: updatedPlayer.name,
-                acknowledged: updatedPlayer.acknowledged
-              })
+              // Fetch all players again to ensure we have the latest state
+              const { data: playersData } = await supabase
+                .from('players')
+                .select('*')
+                .eq('game_id', gameId)
               
-              setPlayers(prev => {
-                const newPlayers = prev.map(p => 
-                  p.id === updatedPlayer.id ? updatedPlayer : p
-                )
-                console.log('Players after update:', 
-                  newPlayers.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    acknowledged: p.acknowledged
-                  }))
-                )
-                return newPlayers
-              })
-              
-              if (updatedPlayer.name === playerName) {
-                console.log('Updating current player:', updatedPlayer)
-                setCurrentPlayer(updatedPlayer)
+              if (playersData) {
+                setPlayers(playersData)
               }
               break
             }
             case 'DELETE': {
+              // If current player was removed, clear session and return to station
+              if (payload.old.name === playerName) {
+                storage.clearGameSession(gameId)
+                window.location.reload()
+                return
+              }
+              
+              // Immediately update players list for everyone else
               setPlayers(prev => prev.filter(p => p.id !== payload.old.id))
+              break
+            }
+            case 'UPDATE': {
+              const updatedPlayer = payload.new as Player
+              setPlayers(prev => prev.map(p => 
+                p.id === updatedPlayer.id ? updatedPlayer : p
+              ))
+              if (updatedPlayer.name === playerName) {
+                setCurrentPlayer(updatedPlayer)
+              }
               break
             }
           }
@@ -206,9 +208,18 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
     return () => {
       gameSubscription.unsubscribe()
       playerSubscription.unsubscribe()
-      channel.unsubscribe()
     }
   }, [gameId, playerName])
+
+  if (!game || !currentPlayer || !players.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-polar-gold font-holiday text-2xl">
+          Boarding train...
+        </div>
+      </div>
+    )
+  }
 
   // Update handleStartSelection with better feedback and logging
   const handleStartSelection = async () => {
@@ -299,20 +310,17 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
     if (!currentPlayer) return
     
     try {
-      console.log('Acknowledging role...')
-      
-      // Remove local state updates since realtime will handle it
       const { error } = await supabase
         .from('players')
         .update({ acknowledged: true })
         .eq('id', currentPlayer.id)
+        .select()
+        .single()
 
       if (error) {
-        console.error('Error acknowledging role:', error)
         alert('Failed to acknowledge role!')
       }
     } catch (error) {
-      console.error('Error in handleAcknowledge:', error)
       alert('Error acknowledging role!')
     }
   }
@@ -346,14 +354,32 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
         console.error('Error adding players:', error)
       }
 
-      // Update player count in game
-      await supabase
-        .from('games')
-        .update({ player_count: players.length + testPlayers.length })
-        .eq('id', gameId)
-
     } catch (error) {
       console.error('Error in handleAddTestPlayers:', error)
+    }
+  }
+
+  const handleRemovePlayer = async (playerId: string) => {
+    try {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerId)
+
+      if (error) {
+        setNotification({
+          message: 'Failed to remove passenger',
+          type: 'error'
+        })
+      } else {
+        setNotification({
+          message: 'Passenger removed from train',
+          type: 'success'
+        })
+      }
+      setTimeout(() => setNotification(null), 3000)
+    } catch (error) {
+      console.error('Error in handleRemovePlayer:', error)
     }
   }
 
@@ -363,6 +389,13 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
       case 'LOBBY':
         return (
           <div className="space-y-4">
+            <TrainCarView 
+              players={players}
+              currentPlayerName={playerName}
+              isHost={currentPlayer?.is_host}
+              gameStatus={game.status}
+              onRemovePlayer={handleRemovePlayer}
+            />
             {currentPlayer?.is_host && (
               <>
                 {testMode && (
@@ -390,6 +423,13 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
       case 'SELECTING':
         return (
           <div className="space-y-4">
+            <TrainCarView 
+              players={players}
+              currentPlayerName={playerName}
+              isHost={currentPlayer?.is_host}
+              gameStatus={game.status}
+            />
+            
             {currentPlayer && !currentPlayer.acknowledged && (
               <div className="holiday-card p-4">
                 <p className="font-holiday text-polar-gold text-lg mb-2">
@@ -454,11 +494,17 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
 
       case 'ACTIVE':
         return (
-          <div className="holiday-card p-4 text-center">
-            <h2 className="font-holiday text-polar-gold text-2xl">Journey in Progress</h2>
-            <p className="font-ticket text-polar-steam mt-2">
-              The mystery unfolds as we travel through the night...
-            </p>
+          <div className="space-y-4">
+            <TrainCarView 
+              players={players}
+              currentPlayerName={playerName}
+            />
+            <div className="holiday-card p-4 text-center">
+              <h2 className="font-holiday text-polar-gold text-2xl">Journey in Progress</h2>
+              <p className="font-ticket text-polar-steam mt-2">
+                The mystery unfolds as we travel through the night...
+              </p>
+            </div>
           </div>
         )
 
@@ -466,8 +512,6 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
         return null
     }
   }
-
-  if (!game || !currentPlayer) return <div>Loading...</div>
 
   return (
     <div>
@@ -502,25 +546,6 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
                 Passengers: {players.length}/{MAX_PLAYERS}
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {players.map(player => (
-              <div 
-                key={player.id}
-                className={`p-3 holiday-card flex justify-between items-center
-                  ${game.status === 'SELECTING' && player.acknowledged 
-                    ? 'border-polar-green' 
-                    : ''
-                  }`}
-              >
-                <span className="font-ticket text-polar-gold">
-                  {player.name} 
-                  {player.is_host ? ' 🎅' : ''}
-                </span>
-                {player.acknowledged && <span className="text-polar-gold">✓</span>}
-              </div>
-            ))}
           </div>
 
           {renderGameContent()}

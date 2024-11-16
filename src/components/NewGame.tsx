@@ -13,7 +13,6 @@ export function NewGame() {
         .from('games')
         .insert({
           status: 'LOBBY',
-          player_count: 1,
         })
         .select()
         .single()

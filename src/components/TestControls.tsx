@@ -1,6 +1,7 @@
 import { Game, Player } from '../types/game'
 import { supabase } from '../lib/supabase'
 import { CHARACTERS } from '../constants/characters'
+import { storage } from '../lib/storage'
 
 interface TestControlsProps {
   game: Game
@@ -26,6 +27,13 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
       .from('games')
       .update({ status })
       .eq('id', gameId)
+
+    // If completing the game, clear the session
+    if (status === 'COMPLETED') {
+      storage.clearGameSession(gameId)
+      // Refresh the page to return to station
+      window.location.reload()
+    }
   }
 
   const handleResetAllAcknowledgments = async () => {
@@ -56,15 +64,12 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
     const unacknowledgedPlayers = players.filter(p => !p.acknowledged)
     if (unacknowledgedPlayers.length === 0) return
 
-    console.log('Starting batch acknowledgment simulation')
-
     // Simulate random delays for each player
     const simulatePlayerAcknowledge = async (player: Player) => {
       // Random delay between 1-5 seconds
       const delay = Math.random() * 4000 + 1000
       await new Promise(resolve => setTimeout(resolve, delay))
       
-      console.log('Acknowledging player:', player.name)
       const { error } = await supabase
         .from('players')
         .update({ acknowledged: true })
@@ -89,8 +94,6 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
       Math.floor(Math.random() * unacknowledgedPlayers.length)
     ]
 
-    console.log('Simulating acknowledgment for:', randomPlayer.name)
-    
     const { error } = await supabase
       .from('players')
       .update({ acknowledged: true })
@@ -176,6 +179,12 @@ export function TestControls({ game, players, gameId, setPlayers, currentPlayerN
               className="ticket-button px-3 py-1 text-sm"
             >
               Force ACTIVE
+            </button>
+            <button
+              onClick={() => handleForceGameState('COMPLETED')}
+              className="ticket-button px-3 py-1 text-sm bg-polar-red hover:bg-polar-red/80"
+            >
+              Force COMPLETE
             </button>
           </div>
         </div>
