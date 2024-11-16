@@ -11,7 +11,6 @@ export function WelcomeScreen() {
   const [showContent, setShowContent] = useState(false)
   const [activeGame, setActiveGame] = useState<Game | null>(null)
   const [takenNames, setTakenNames] = useState<string[]>([])
-  const [isHost, setIsHost] = useState(false)
   const redirecting = false
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export function WelcomeScreen() {
           .single()
 
         if (player) {
-          setIsHost(player.is_host ?? false)
           return true
         }
       }
