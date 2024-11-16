@@ -1,5 +1,6 @@
 import { Game, Player } from '../types/game'
 import { supabase } from '../lib/supabase'
+import { CHARACTERS } from '../constants/characters'
 
 interface TestControlsProps {
   game: Game
@@ -7,6 +8,16 @@ interface TestControlsProps {
   gameId: string
   setPlayers: React.Dispatch<React.SetStateAction<Player[]>>
   currentPlayerName: string
+}
+
+function generateRandomName(): string {
+  // Flatten all character names into a single array
+  const allCharacters = Object.values(CHARACTERS).flatMap(family => 
+    family.members.map(member => member.name)
+  )
+  
+  // Pick a random character name
+  return allCharacters[Math.floor(Math.random() * allCharacters.length)]
 }
 
 export function TestControls({ game, players, gameId, setPlayers, currentPlayerName }: TestControlsProps) {

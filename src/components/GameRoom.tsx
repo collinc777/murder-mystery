@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Database } from '../lib/database.types'
 import { TestControls } from './TestControls'
 import confetti from 'canvas-confetti'
+import { HostIndicator } from './HostIndicator'
 
 type Game = Database['public']['Tables']['games']['Row']
 type Player = Database['public']['Tables']['players']['Row']
@@ -469,68 +470,71 @@ export function GameRoom({ gameId, playerName, testMode = false }: GameRoomProps
   if (!game || !currentPlayer) return <div>Loading...</div>
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      {testMode && (
-        <div className="mb-4 p-2 bg-polar-red/20 text-polar-gold rounded text-center font-holiday">
-          🔧 TEST MODE ACTIVE 🔧
-        </div>
-      )}
-      
-      {notification && (
-        <div 
-          className={`mb-4 p-3 rounded-lg text-center font-holiday animate-fade-in
-            ${notification.type === 'success' 
-              ? 'bg-polar-green/20 text-polar-gold border border-polar-gold' 
-              : 'bg-polar-red/20 text-polar-gold border border-polar-red'
-            }`}
-        >
-          {notification.message}
-        </div>
-      )}
-      
-      <div className="holiday-card p-6 mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-4xl font-holiday text-polar-gold">
-            The Polar Express Mystery
-          </h1>
-          <div className="font-ticket text-polar-steam">
-            <span>Ticket #{gameId.slice(0, 8)}</span>
-            <div className="text-sm">
-              Passengers: {players.length}/{MAX_PLAYERS}
+    <div>
+      {currentPlayer.is_host && <HostIndicator />}
+      <div className="p-4 max-w-4xl mx-auto">
+        {testMode && (
+          <div className="mb-4 p-2 bg-polar-red/20 text-polar-gold rounded text-center font-holiday">
+            🔧 TEST MODE ACTIVE 🔧
+          </div>
+        )}
+        
+        {notification && (
+          <div 
+            className={`mb-4 p-3 rounded-lg text-center font-holiday animate-fade-in
+              ${notification.type === 'success' 
+                ? 'bg-polar-green/20 text-polar-gold border border-polar-gold' 
+                : 'bg-polar-red/20 text-polar-gold border border-polar-red'
+              }`}
+          >
+            {notification.message}
+          </div>
+        )}
+        
+        <div className="holiday-card p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-4xl font-holiday text-polar-gold">
+              The Polar Express Mystery
+            </h1>
+            <div className="font-ticket text-polar-steam">
+              <span>Ticket #{gameId.slice(0, 8)}</span>
+              <div className="text-sm">
+                Passengers: {players.length}/{MAX_PLAYERS}
+              </div>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {players.map(player => (
+              <div 
+                key={player.id}
+                className={`p-3 holiday-card flex justify-between items-center
+                  ${game.status === 'SELECTING' && player.acknowledged 
+                    ? 'border-polar-green' 
+                    : ''
+                  }`}
+              >
+                <span className="font-ticket text-polar-gold">
+                  {player.name} 
+                  {player.is_host ? ' 🎅' : ''}
+                </span>
+                {player.acknowledged && <span className="text-polar-gold">✓</span>}
+              </div>
+            ))}
+          </div>
+
+          {renderGameContent()}
+
+          {testMode && game && (
+            <TestControls 
+              game={game}
+              players={players}
+              gameId={gameId}
+              setPlayers={setPlayers}
+              currentPlayerName={playerName}
+            />
+          )}
         </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {players.map(player => (
-            <div 
-              key={player.id}
-              className={`p-3 holiday-card flex justify-between items-center
-                ${game.status === 'SELECTING' && player.acknowledged 
-                  ? 'border-polar-green' 
-                  : ''
-                }`}
-            >
-              <span className="font-ticket text-polar-gold">
-                {player.name} 
-                {player.is_host ? ' 🎅' : ''}
-              </span>
-              {player.acknowledged && <span className="text-polar-gold">✓</span>}
-            </div>
-          ))}
-        </div>
-
-        {renderGameContent()}
-
-        {testMode && game && (
-          <TestControls 
-            game={game}
-            players={players}
-            gameId={gameId}
-            setPlayers={setPlayers}
-            currentPlayerName={playerName}
-          />
-        )}
       </div>
     </div>
   )
