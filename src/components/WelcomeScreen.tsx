@@ -4,6 +4,7 @@ import type { Game } from '../types/game'
 import { CharacterSelect } from './CharacterSelect'
 import { storage } from '../lib/storage'
 import { HostIndicator } from './HostIndicator'
+import trainImage from "../assets/train.jpeg"
 
 export function WelcomeScreen() {
   const [showTrain, setShowTrain] = useState(false)
@@ -172,22 +173,20 @@ export function WelcomeScreen() {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {/* Train */}
+          {/* Train Image */}
           <div 
             className={`transition-all duration-1000 transform ${
               showTrain ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
             }`}
           >
             <div className="relative">
-              <div className="w-64 h-32 bg-polar-gold rounded-lg relative">
-                {/* Train details */}
-                <div className="absolute bottom-0 w-full h-8 bg-polar-night"></div>
-                <div className="absolute top-4 right-4 w-16 h-16 bg-polar-night rounded-full"></div>
-                <div className="absolute top-8 left-4 w-8 h-8 bg-polar-gold border-4 border-polar-night rounded-full"></div>
-              </div>
-              {/* Wheels */}
-              <div className="absolute bottom-0 left-8 w-12 h-12 bg-polar-night rounded-full"></div>
-              <div className="absolute bottom-0 right-8 w-12 h-12 bg-polar-night rounded-full"></div>
+              <img 
+                src={trainImage} 
+                alt="Polar Express Train" 
+                className="w-full max-w-2xl mx-auto rounded-lg shadow-lg brightness-75"
+              />
+              {/* Add a subtle gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-polar-night/50 to-transparent rounded-lg"></div>
             </div>
           </div>
 
