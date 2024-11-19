@@ -21,8 +21,8 @@ function App() {
   // Get the current route
   const path = window.location.pathname;
 
-  // If we have an active game session, show the game room
-  if (gameId && playerName) {
+  // Only show GameRoom if we have an active session AND we're not trying to start/join a new game
+  if (gameId && playerName && path === '/') {
     return (
       <Layout isHost={playerName === 'RUSSELL TINSLEBOTTOM'}>
         <GameRoom 
