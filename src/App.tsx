@@ -6,7 +6,7 @@ import { WelcomeScreen } from './components/WelcomeScreen'
 import { NewGame } from './components/NewGame'
 import { JoinGame } from './components/JoinGame'
 import { Layout } from './components/Layout'
-import { HostTransfer } from './components/HostTransfer'
+import { ClaimHost } from './components/ClaimHost'
 
 function App() {
   const [gameId] = useState<string | null>(() => {
@@ -49,10 +49,10 @@ function App() {
           <JoinGame />
         </Layout>
       );
-    case '/host-transfer':
+    case '/claim-host':
       return (
         <Layout>
-          <HostTransfer />
+          <ClaimHost />
         </Layout>
       );
     default:

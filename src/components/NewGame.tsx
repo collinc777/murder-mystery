@@ -8,6 +8,19 @@ export function NewGame() {
   const handleCreateGame = async () => {
     setIsCreating(true)
     try {
+      // Check for existing active games
+      const { data: existingGames, error: existingGamesError } = await supabase
+        .from('games')
+        .select()
+        .in('status', ['LOBBY', 'SELECTING', 'ACTIVE'])
+        .maybeSingle()
+      console.log({ existingGames, existingGamesError })
+
+      if (!!existingGames) {
+        alert('There is already an active game in progress!')
+        window.location.href = '/'
+      }
+
       // Create new game
       const { data: game, error: gameError } = await supabase
         .from('games')

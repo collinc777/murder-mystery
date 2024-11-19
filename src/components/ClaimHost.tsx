@@ -2,17 +2,17 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { storage } from '../lib/storage'
 
-export function HostTransfer() {
-  const [isTransferring, setIsTransferring] = useState(false)
+export function ClaimHost() {
+  const [isClaiming, setIsClaiming] = useState(false)
 
-  const handleTransfer = async () => {
+  const handleClaim = async () => {
     const {data: game, error: gameError} = await supabase.from('games').select('*').neq('status', 'COMPLETED').single()
     console.log(game)
     if (gameError || !game) {
       alert('No active game found!')
       return
     }
-    setIsTransferring(true)
+    setIsClaiming(true)
 
     try {
       // Verify game exists
@@ -39,7 +39,7 @@ export function HostTransfer() {
       console.error('Error in host transfer:', error)
       alert('Error transferring host!')
     } finally {
-      setIsTransferring(false)
+      setIsClaiming(false)
     }
   }
 
@@ -53,11 +53,11 @@ export function HostTransfer() {
           
           <div className="space-y-6">
             <button
-              onClick={handleTransfer}
-              disabled={isTransferring}
+              onClick={handleClaim}
+              disabled={isClaiming}
               className="ticket-button w-full p-3 disabled:opacity-50"
             >
-              {isTransferring ? 'Transferring...' : 'Transfer Host'}
+              {isClaiming ? 'Claiming...' : 'Claim Host'}
             </button>
 
             <div className="text-center">
