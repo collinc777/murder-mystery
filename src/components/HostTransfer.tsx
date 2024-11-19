@@ -30,33 +30,7 @@ export function HostTransfer() {
         return
       }
 
-      // Update host status
-      const { error: updateError } = await supabase
-        .from('players')
-        .update({ is_host: false })
-        .eq('id', currentHost.id)
-
-      if (updateError) {
-        alert('Error updating host status!')
-        return
-      }
-
-      // Save new session
       storage.saveGameSession(game.id, 'RUSSELL TINSLEBOTTOM')
-
-      // Create new host player
-      const { error: newHostError } = await supabase
-        .from('players')
-        .insert({
-          game_id: game.id,
-          name: 'RUSSELL TINSLEBOTTOM',
-          is_host: true,
-        })
-
-      if (newHostError) {
-        alert('Error creating new host!')
-        return
-      }
 
       // Redirect to game
       window.location.href = '/'
