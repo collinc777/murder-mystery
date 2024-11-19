@@ -6,6 +6,7 @@ import { WelcomeScreen } from './components/WelcomeScreen'
 import { NewGame } from './components/NewGame'
 import { JoinGame } from './components/JoinGame'
 import { Layout } from './components/Layout'
+import { HostTransfer } from './components/HostTransfer'
 
 function App() {
   const [gameId] = useState<string | null>(() => {
@@ -46,6 +47,12 @@ function App() {
       return (
         <Layout>
           <JoinGame />
+        </Layout>
+      );
+    case '/host-transfer':
+      return (
+        <Layout>
+          <HostTransfer />
         </Layout>
       );
     default:
